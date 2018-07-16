@@ -19,4 +19,11 @@ def tokenize_and_preprocess(df):
     """
     pass
 
-#need to get VIX data on these days too
+def combine_with_financial_data(df):
+    df2 = pd.read_csv("financial_data.csv", index_col = 0)
+    df3 = df.join(df2, how = 'left')
+    df4 = df3[['statements', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
+    return df4
+
+df = read_and_clean_df()
+df2 = combine_with_financial_data(df)

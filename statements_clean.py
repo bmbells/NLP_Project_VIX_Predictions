@@ -25,5 +25,15 @@ def combine_with_financial_data(df):
     df4 = df3[['statements', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
     return df4
 
-df = read_and_clean_df()
-df2 = combine_with_financial_data(df)
+def make_buckets(df):
+    df_new = df.copy()
+    df_new['vix_buckets_1d'] = pd.qcut(df_new.vix_1d, 3 , labels = [-1,0,1])
+    df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])
+    df_new['tnx_buckets_1d'] = pd.qcut(df_new.tnx_1d, 3 , labels = [-1,0,1])
+    df_new['tnx_buckets_5d'] = pd.qcut(df_new.tnx_5d, 3 , labels = [-1,0,1])
+    return df_new
+
+if __name__ == '__main__':
+    df = read_and_clean_df()
+    df2 = combine_with_financial_data(df)
+    df3 = make_buckets(df2)

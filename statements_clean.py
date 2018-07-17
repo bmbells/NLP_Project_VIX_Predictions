@@ -9,7 +9,21 @@ def read_and_clean_df():
         temp = df.iloc[i,0].split('\n\nShare\n\n')
         df.iloc[i,0] = temp[len(temp) - 1]    
         temp2 = df.iloc[i,0].split('For immediate release')
-        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ')
+        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ').replace('\xa0',' ')
+        for j in range(1994,2019):
+            splitter = str(j) + ' Monetary policy'
+            temp3 = df.iloc[i,0].split(splitter)
+            df.iloc[i,0] = temp3[0]   
+        temp4 = df.iloc[i,0].split('Last Update:')
+        df.iloc[i,0] = temp4[0]  
+        temp5 = df.iloc[i,0].split('Board of Governors of the Federal Reserve System')
+        df.iloc[i,0] = temp5[0]
+        temp6 = df.iloc[i,0].split('Implementation Note issued')
+        df.iloc[i,0] = temp6[0]
+        temp7 = df.iloc[i,0].split('Statement Regarding Purchases of')
+        df.iloc[i,0] = temp7[0]
+        temp8 = df.iloc[i,0].split('Maturity Extension Program and Reinvestment Policy')
+        df.iloc[i,0] = temp8[0]
     return df
 
 def tokenize_and_preprocess(df):

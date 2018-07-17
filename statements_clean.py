@@ -10,8 +10,8 @@ from nltk.tag import pos_tag
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
-
-os.chdir("C:\\Users\\jooho\\NLPProject")
+#os.chdir("C:\\Users\\jooho\\NLPProject")
+os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")
@@ -19,8 +19,7 @@ def read_and_clean_df():
         temp = df.iloc[i,0].split('\n\nShare\n\n')
         df.iloc[i,0] = temp[len(temp) - 1]
         temp2 = df.iloc[i,0].split('For immediate release')
-<<<<<<< HEAD
-        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ').replace('\xa0',' ')
+        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ').replace('\xa0',' ').strip()
         for j in range(1994,2019):
             splitter = str(j) + ' Monetary policy'
             temp3 = df.iloc[i,0].split(splitter)
@@ -35,10 +34,13 @@ def read_and_clean_df():
         df.iloc[i,0] = temp7[0]
         temp8 = df.iloc[i,0].split('Maturity Extension Program and Reinvestment Policy')
         df.iloc[i,0] = temp8[0]
-=======
-        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ').strip() #Also get rid of blank space
+        temp9 = df.iloc[i,0].split('1. The Open Market Desk will issue a technical note shortly after')
+        df.iloc[i,0] = temp9[0]
+        temp10 = df.iloc[i,0].split('Statement from Federal Reserve Bank of New')
+        df.iloc[i,0] = temp10[0]
     df = df.loc[df.index >'1999-01-01 00:00:00'] #Filter out the stuff before 1999
->>>>>>> 8dfdab1cdefaa472ec40acea0e8ebbe880e76408
+    bad_dates = ['2007-08-10','2007-08-17','2008-01-22','2008-03-11','2008-10-08','2010-05-09']
+    df = df.loc[~df.index.isin(bad_dates)]
     return df
 
 def tokenize_and_preprocess_bystatement(stng): #Preprocesses by each statement
@@ -115,5 +117,5 @@ if __name__ == '__main__':
     df['statements'] = df.statements.apply(tokenize_and_preprocess_bystatement)
     bigrams, infreq_words = preprocess_total(df)
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
-    #df2 = combine_with_financial_data(df)
-    #df3 = make_buckets(df2)
+    df2 = combine_with_financial_data(df)
+    df3 = make_buckets(df2)

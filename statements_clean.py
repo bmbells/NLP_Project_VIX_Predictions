@@ -1,23 +1,82 @@
 import pandas as pd
 import os
 import numpy as np
-os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+import string
+import nltk
+from collections import Counter
+#nltk.download('stopwords')
+#nltk.download('averaged_perceptron_tagger')
+from nltk.tag import pos_tag
+from nltk.corpus import stopwords
+from nltk.stem.porter import PorterStemmer
+from nltk.collocations import *
+
+os.chdir("C:\\Users\\jooho\\NLPProject")
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")
     for i in range(len(df)):
         temp = df.iloc[i,0].split('\n\nShare\n\n')
-        df.iloc[i,0] = temp[len(temp) - 1]    
+        df.iloc[i,0] = temp[len(temp) - 1]
         temp2 = df.iloc[i,0].split('For immediate release')
-        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ')
+        df.iloc[i,0] = temp2[len(temp2) - 1].replace('\n',' ').replace('\t', ' ').replace('\r',' ').strip() #Also get rid of blank space
+    df = df.loc[df.index >'1999-01-01 00:00:00'] #Filter out the stuff before 1999
     return df
 
-def tokenize_and_preprocess(df):
+def tokenize_and_preprocess_bystatement(stng): #Preprocesses by each statement
     """
     here we need to decide how to split up the words and what words to get rid of.
-    Are locations important?        
+    Are locations important?
     """
-    pass
+    neg_tokens = add_negation_remove_propnouns(stng) #Adds negation, removes Proper Nouns
+    translator = str.maketrans('', '', string.punctuation)
+    stripped = [w.translate(translator) for w in neg_tokens] #Removes remaining punctuation
+    words = [word for word in stripped if word.isalpha()] #Removes non-alphabetic words
+    stop_words = set(stopwords.words('english'))
+    stop_words_withneg = []
+    for i in stop_words: #Add stopwords and negation of stopwords
+        stop_words_withneg.append(i)
+        stop_words_withneg.append('not'+i)
+    words = [w for w in words if not w in stop_words_withneg] #Remove stopwords
+    porter = PorterStemmer()
+    stemmed = [porter.stem(word) for word in words] #Stem words
+    return stemmed
+
+def add_negation_remove_propnouns(stng):
+    words = stng.split()
+    tagged_sent = pos_tag(words) #Tag Words
+    propernouns = [word for word, pos in tagged_sent if pos=='NNP'] #Isolate Proper Nouns
+    words = [w for w in words if not w in propernouns] #Remove all propernouns
+    negation = False
+    delims = '?.,!;j'
+    result = []
+    for word in words: #Adds not in front of negated words
+        stripped = word.strip(delims).lower() #Convert ot lowercase
+        negated = 'not'+ stripped if negation else stripped
+        result.append(negated)
+        if any(neg in word for neg in ['not',"n't",'no']):
+            negation = not negation
+        if any(c in word for c in delims):
+            negation = False
+    return result
+
+def preprocess_total(df):
+    alltokens = []
+    alltokens = [tk for row in df.statements for tk in row] #Get tokens from every statement
+    bigram_measures = nltk.collocations.BigramAssocMeasures()
+    finder = BigramCollocationFinder.from_words(alltokens) #Find bigrams
+    finder.apply_freq_filter(5) #Need frequency of at least 5
+    top_bigrams = finder.nbest(bigram_measures.pmi,50) #Find top 50 bigrams
+    infreq = [k for k,v in Counter(alltokens).items() if v<5] #Find words that only appeared less than 5 times to eventually remove
+    return top_bigrams, infreq
+
+def preprocess_final(tokens, bigrams, infreq_words):
+    sentence = " ".join(tokens) #Turn back into a string so I can replace bi_grams into 1 word feature
+    for b1, b2 in bigrams:
+        sentence = sentence.replace("%s %s" % (b1 ,b2), "%s%s" % (b1, b2))
+    words = sentence.split()
+    words = [w for w in words if not w in infreq_words] #Remove infrequent words
+    return words
 
 def combine_with_financial_data(df):
     df2 = pd.read_csv("financial_data.csv", index_col = 0)
@@ -35,5 +94,8 @@ def make_buckets(df):
 
 if __name__ == '__main__':
     df = read_and_clean_df()
-    df2 = combine_with_financial_data(df)
-    df3 = make_buckets(df2)
+    df['statements'] = df.statements.apply(tokenize_and_preprocess_bystatement)
+    bigrams, infreq_words = preprocess_total(df)
+    df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
+    #df2 = combine_with_financial_data(df)
+    #df3 = make_buckets(df2)

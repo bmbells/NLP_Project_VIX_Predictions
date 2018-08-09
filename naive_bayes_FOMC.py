@@ -17,12 +17,14 @@ from sklearn.model_selection import KFold
 from sklearn.model_selection import LeaveOneOut
 #os.chdir("C:\\Users\\jooho\\NLPProject")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+
 POS_LABEL = 1
 NEG_LABEL = -1
 NONE_LABEL = 0   
-alpha = 10 # The value of alpha can be tuned
+alpha = 1
 
 def load_data():
+    """Load all necessary data"""
     df = pd.read_pickle("all_data.pickle")
     return df
 
@@ -223,15 +225,19 @@ class NaiveBayes():
         return sum(accuracy)/float(len(accuracy))
 
 def make_train_test_data(df, label, test_size = 0.2):
+    """Divide data into train and test data for model training and validating."""
     X = df.statements
     y = df[label]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)#, random_state=42)
     return X_train, X_test, y_train, y_test
 
 
 def param_fitting(train_data,train_labels):
-    """Plot the validation curve for logistic regression and return the optimal C (HW2 q6)"""
-    x = np.arange(.01,1.01,.01)
+    """
+    This function takes the training data/labels and returns best performing alpha parameter.
+    Use 5 fold cross validation to hypertune the parameter.
+    """
+    x = np.arange(.05,2.05,.05)
     scores = []
     kf = KFold(n_splits = 5)
     for alpha in x:
@@ -244,34 +250,50 @@ def param_fitting(train_data,train_labels):
         scores.append(np.mean(kfold_scores))    
     return x[np.argmax(scores)]    
 
-if __name__ == '__main__':
+def main():
+    """ Driver function that trains a model for each label """
     df = load_data()
     labels = ['vix_buckets_1d', 'vix_buckets_5d', 'tnx_buckets_1d', 'tnx_buckets_5d']
     scores = []
     for label in labels:
-        train_data, test_data, train_labels, test_labels = make_train_test_data(df, label)      
+        train_data, test_data, train_labels, test_labels = make_train_test_data(df, label) 
         alpha = param_fitting(train_data, train_labels)
         nb_model = NaiveBayes(train_data,train_labels, alpha)
         nb_model.train_model(train_data, train_labels)
         score = nb_model.evaluate_classifier_accuracy(test_data, test_labels)
         print(f"Score for {label} = {score}")
         scores.append(score)
-        
-lik_log_rats = defaultdict(float)
-for word in nb_model.vocab:
-    lik_log_rats[word] = nb_model.likelihood_log_ratio(word)
-s = sorted(lik_log_rats.items(), key=lambda t: t[1], reverse = True)
-s[0:5]
-s[-5::]
+    return scores    
+    
 
-print("TOP 15 WORDS FOR CLASS " + POS_LABEL + " :")
-for tok, count in nb_model.top_n(POS_LABEL, 15):
-    print('', tok, count)
-print('')
+if __name__ == '__main__':
+    """ Due to the random component and lack of data we want to run it multiple
+    times and average the scores.
+    """
+    NUM_EPOCHS = 10
+    all_scores = []
+    for i in range(NUM_EPOCHS):
+        print(i)
+        all_scores.append(main())
+    all_scores = np.array(all_scores)    
+    print(np.mean(all_scores,axis= 0))
 
-print("TOP 15 WORDS FOR CLASS " + NEG_LABEL + " :")
-for tok, count in nb_model.top_n(NEG_LABEL, 15):
-    print('', tok, count)
-print('')
-print('[done.]')
+#####################################        
+#lik_log_rats = defaultdict(float)
+#for word in nb_model.vocab:
+#    lik_log_rats[word] = nb_model.likelihood_log_ratio(word)
+#s = sorted(lik_log_rats.items(), key=lambda t: t[1], reverse = True)
+#s[0:5]
+#s[-5::]
+
+#print("TOP 15 WORDS FOR CLASS " + POS_LABEL + " :")
+#for tok, count in nb_model.top_n(POS_LABEL, 15):
+#    print('', tok, count)
+#print('')
+#
+#print("TOP 15 WORDS FOR CLASS " + NEG_LABEL + " :")
+#for tok, count in nb_model.top_n(NEG_LABEL, 15):
+#    print('', tok, count)
+#print('')
+#print('[done.]')
 

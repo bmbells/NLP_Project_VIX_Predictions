@@ -26,13 +26,15 @@ NEG_LABEL = -1
 NONE_LABEL = 0 
 
 def load_data():
+    """Load all necessary data"""
     df = pd.read_pickle("all_data.pickle")
     return df
 
 def make_train_test_data(df, label, test_size = 0.2):
+    """Divide data into train and test data for model training and validating."""
     X = df.statements
     y = df[label]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)#, random_state=42)
     return X_train, X_test, y_train, y_test
 
 def make_vocab(statements):
@@ -40,7 +42,7 @@ def make_vocab(statements):
         word_to_idx = {k: v+1 for v, k in enumerate(vocab)} # word to index mapping
         word_to_idx["UNK"] = 0 # all the unknown words will be mapped to index 0
         vocab = set(word_to_idx.keys())
-        return vocab, word_to_idx
+        return len(vocab), word_to_idx
 
 class TextClassificationDataset(tud.Dataset):
     '''
@@ -49,13 +51,12 @@ class TextClassificationDataset(tud.Dataset):
     The dataset encodes documents into indices. 
     With the PyTorch dataloader, you can easily get batched data for training and evaluation. 
     '''
-    def __init__(self, statements, labels, vocab, word_to_idx):
-        self.vocab = vocab
+    def __init__(self, statements, labels, vocab_size, word_to_idx):
         self.word_to_idx = word_to_idx
         self.idx_to_word = {v:k for k, v in self.word_to_idx.items()}       
         self.label_to_idx = {POS_LABEL: 0, NEG_LABEL: 1, NONE_LABEL : 2}
         self.idx_to_label = [POS_LABEL, NEG_LABEL, NONE_LABEL]
-        self.vocab_size = len(self.vocab)
+        self.vocab_size = vocab_size
         self.statements = statements
         self.labels = labels
         
@@ -83,16 +84,31 @@ class TextClassificationDataset(tud.Dataset):
             X.append(np.array(self[i][0]))
             y.append(self[i][1])
         return np.array(X),np.array(y)
-        
-df = load_data()
-label = 'tnx_buckets_1d'
-vocab, word_to_idx = make_vocab(df.statements)
-train_data, test_data, train_labels, test_labels = make_train_test_data(df, label)              
-train_dataset = TextClassificationDataset(train_data, train_labels, vocab, word_to_idx)
-X,y = train_dataset.make_vectors()
-test_dataset = TextClassificationDataset(test_data, test_labels, vocab, word_to_idx)
-X_test,y_test = test_dataset.make_vectors()
-nnet = MLPClassifier(activation = 'relu', max_iter = 1000,hidden_layer_sizes=(15,2), solver = 'adam')
-nnet.fit(X,y)
-preds = nnet.predict(X_test)
-(preds == y_test).sum()/len(preds)
+
+def main():
+    df = load_data()
+    vocab_size, word_to_idx = make_vocab(df.statements)
+    labels = ['vix_buckets_1d', 'vix_buckets_5d', 'tnx_buckets_1d', 'tnx_buckets_5d']
+    scores = []
+    for label in labels:
+        train_data, test_data, train_labels, test_labels = make_train_test_data(df, label)
+        train_dataset = TextClassificationDataset(train_data, train_labels, vocab_size, word_to_idx)
+        X,y = train_dataset.make_vectors()
+        test_dataset = TextClassificationDataset(test_data, test_labels, vocab_size, word_to_idx)
+        X_test,y_test = test_dataset.make_vectors()
+        nnet = MLPClassifier(activation = 'relu', max_iter = 1000,hidden_layer_sizes=(100,1), solver = 'adam')
+        nnet.fit(X,y)
+        preds = nnet.predict(X_test)
+        score = (preds == y_test).sum()/len(preds)
+        print(f"Score for {label} = {score}")
+        scores.append(score)
+    return scores
+    
+if __name__ == '__main__':        
+    NUM_EPOCHS = 10
+    all_scores = []
+    for i in range(NUM_EPOCHS):
+        print(i)
+        all_scores.append(main())
+    all_scores = np.array(all_scores)    
+    print(np.mean(all_scores,axis= 0))

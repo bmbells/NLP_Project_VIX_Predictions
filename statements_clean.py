@@ -119,3 +119,5 @@ if __name__ == '__main__':
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
     df2 = combine_with_financial_data(df)
     df3 = make_buckets(df2)
+    df3.to_pickle("./all_data.pickle")
+    

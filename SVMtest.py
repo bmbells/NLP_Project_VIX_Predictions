@@ -49,5 +49,7 @@ for bucket in buckets:
             clf = SVC(C=maxC, kernel = kernel)
             X_train, X_test, Y_train, Y_test = make_train_test_data(df, bucket)
             clf.fit(X_train, Y_train)
+            if kernel == 'linear':
+                print (clf.coef_.shape)
             tests.append(clf.score(X_test, Y_test))
         print ('For SVC of {} with a {} kernel and C value of {}, model achieved test score of {:.3f}.\n'.format(bucket, kernel, maxC, np.mean(tests)))

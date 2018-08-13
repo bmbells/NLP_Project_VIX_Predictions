@@ -10,9 +10,11 @@ from nltk.tag import pos_tag
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
+
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 os.chdir("C:\\Users\\jooho\\NLPProject")
 #os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")
@@ -24,9 +26,14 @@ def read_and_clean_df():
         for j in range(1994,2019):
             splitter = str(j) + ' Monetary policy'
             temp3 = df.iloc[i,0].split(splitter)
+
             df.iloc[i,0] = temp3[0]
         temp4 = df.iloc[i,0].split('Last Update:')
         df.iloc[i,0] = temp4[0]
+            df.iloc[i,0] = temp3[0]   
+        temp4 = df.iloc[i,0].split('Last Update:')
+        df.iloc[i,0] = temp4[0]  
+
         temp5 = df.iloc[i,0].split('Board of Governors of the Federal Reserve System')
         df.iloc[i,0] = temp5[0]
         temp6 = df.iloc[i,0].split('Implementation Note issued')
@@ -149,7 +156,9 @@ if __name__ == '__main__':
     df['statements'], df['sentences'] = df.statements.apply(tokenize_and_preprocess_bystatement)
     bigrams, infreq_words = preprocess_total(df)
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
+
     df['sentences'] = df.sentences.apply(preprocess_final_sentences, args = (bigrams, infreq_words))
     df2 = combine_with_financial_data(df)
     df3 = make_buckets(df2)
     df3.to_pickle("./all_data.pickle")
+

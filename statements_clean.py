@@ -10,11 +10,9 @@ from nltk.tag import pos_tag
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
-
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-os.chdir("C:\\Users\\jooho\\NLPProject")
+os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
 #os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
-
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")
@@ -26,14 +24,9 @@ def read_and_clean_df():
         for j in range(1994,2019):
             splitter = str(j) + ' Monetary policy'
             temp3 = df.iloc[i,0].split(splitter)
-
             df.iloc[i,0] = temp3[0]
         temp4 = df.iloc[i,0].split('Last Update:')
         df.iloc[i,0] = temp4[0]
-            df.iloc[i,0] = temp3[0]   
-        temp4 = df.iloc[i,0].split('Last Update:')
-        df.iloc[i,0] = temp4[0]  
-
         temp5 = df.iloc[i,0].split('Board of Governors of the Federal Reserve System')
         df.iloc[i,0] = temp5[0]
         temp6 = df.iloc[i,0].split('Implementation Note issued')
@@ -59,21 +52,35 @@ def tokenize_and_preprocess_bystatement(stng): #Preprocesses by each statement
     neg_tokens, sentences = add_negation_remove_propnouns(stng) #Adds negation, removes Proper Nouns
     translator = str.maketrans('', '', string.punctuation)
     stripped = [w.translate(translator) for w in neg_tokens] #Removes remaining punctuation
-    sentences = [[w.translate(translator) for w in sentence] for sentence in sentences]
     words = [word for word in stripped if word.isalpha()] #Removes non-alphabetic words
-    sentences = [[word for word in sentence if word.isalpha()] for sentence in sentences]
-    print (sentences)
     stop_words = set(stopwords.words('english'))
     stop_words_withneg = []
     for i in stop_words: #Add stopwords and negation of stopwords
         stop_words_withneg.append(i)
         stop_words_withneg.append('not'+i)
     words = [w for w in words if not w in stop_words_withneg] #Remove stopwords
-    sentences = [[w for w in sentence if not w in stop_words_withneg] for sentence in sentences]
     porter = PorterStemmer()
     stemmed = [porter.stem(word) for word in words] #Stem words
+    return stemmed
+
+def tokenize_and_preprocess_bystatement_sentences(stng): #Preprocesses by each statement
+    """
+    here we need to decide how to split up the words and what words to get rid of.
+    Are locations important?
+    """
+    neg_tokens, sentences = add_negation_remove_propnouns(stng) #Adds negation, removes Proper Nouns
+    translator = str.maketrans('', '', string.punctuation)
+    sentences = [[w.translate(translator) for w in sentence] for sentence in sentences]
+    sentences = [[word for word in sentence if word.isalpha()] for sentence in sentences]
+    stop_words = set(stopwords.words('english'))
+    stop_words_withneg = []
+    for i in stop_words: #Add stopwords and negation of stopwords
+        stop_words_withneg.append(i)
+        stop_words_withneg.append('not'+i)
+    sentences = [[w for w in sentence if not w in stop_words_withneg] for sentence in sentences]
+    porter = PorterStemmer()
     sentences = [[porter.stem(word) for word in sentence] for sentence in sentences]
-    return stemmed, sentences
+    return sentences
 
 def add_negation_remove_propnouns(stng):
     words = stng.split()
@@ -129,7 +136,7 @@ def preprocess_final(tokens, bigrams, infreq_words):
 def preprocess_final_sentences(sentences, bigrams, infreq_words):
     finallst = []
     for lsts in sentences:
-        sentence = " ".join(lst) #Turn back into a string so I can replace bi_grams into 1 word feature
+        sentence = " ".join(lsts) #Turn back into a string so I can replace bi_grams into 1 word feature
         for b1, b2 in bigrams:
             sentence = sentence.replace("%s %s" % (b1 ,b2), "%s%s" % (b1, b2))
         words = sentence.split()
@@ -153,12 +160,11 @@ def make_buckets(df):
 
 if __name__ == '__main__':
     df = read_and_clean_df()
-    df['statements'], df['sentences'] = df.statements.apply(tokenize_and_preprocess_bystatement)
+    df['sentences'] = df.statements.apply(tokenize_and_preprocess_bystatement_sentences)
+    df['statements'] = df.statements.apply(tokenize_and_preprocess_bystatement)
     bigrams, infreq_words = preprocess_total(df)
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
-
     df['sentences'] = df.sentences.apply(preprocess_final_sentences, args = (bigrams, infreq_words))
     df2 = combine_with_financial_data(df)
     df3 = make_buckets(df2)
     df3.to_pickle("./all_data.pickle")
-

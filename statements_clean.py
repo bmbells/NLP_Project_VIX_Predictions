@@ -11,8 +11,8 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
-#os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+#os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
+os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")
@@ -147,12 +147,12 @@ def preprocess_final_sentences(sentences, bigrams, infreq_words):
 def combine_with_financial_data(df):
     df2 = pd.read_csv("financial_data.csv", index_col = 0)
     df3 = df.join(df2, how = 'left')
-    df4 = df3[['statements', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
+    df4 = df3[['statements', 'sentences','vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
     return df4
 
 def make_buckets(df):
     df_new = df.copy()
-    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .01, .424] , labels = [-1,0,1])
+    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .001, .424] , labels = [-1,0,1])
     df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_1d'] = pd.qcut(df_new.tnx_1d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_5d'] = pd.qcut(df_new.tnx_5d, 3 , labels = [-1,0,1])

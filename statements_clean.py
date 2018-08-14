@@ -103,16 +103,16 @@ def add_negation_remove_propnouns(stng):
             negation = False
     resultsent = []
     for sentence in sentences:
-        result = []
+        sentresult = []
         for word in sentence:
             stripped = word.strip(delims).lower() #Convert to lowercase
             negated = 'not'+ stripped if negation else stripped
-            result.append(negated)
+            sentresult.append(negated)
             if any(neg in word for neg in ['not',"n't",'no']):
                 negation = not negation
             if any(c in word for c in delims):
                 negation = False
-        resultsent.append(result)
+        resultsent.append(sentresult)
     return result, resultsent
 
 def preprocess_total(df):
@@ -147,12 +147,12 @@ def preprocess_final_sentences(sentences, bigrams, infreq_words):
 def combine_with_financial_data(df):
     df2 = pd.read_csv("financial_data.csv", index_col = 0)
     df3 = df.join(df2, how = 'left')
-    df4 = df3[['statements', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
+    df4 = df3[['statements','sentences', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
     return df4
 
 def make_buckets(df):
     df_new = df.copy()
-    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .01, .424] , labels = [-1,0,1])
+    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .001, .424] , labels = [-1,0,1])
     df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_1d'] = pd.qcut(df_new.tnx_1d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_5d'] = pd.qcut(df_new.tnx_5d, 3 , labels = [-1,0,1])

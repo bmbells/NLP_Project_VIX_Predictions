@@ -152,7 +152,7 @@ def combine_with_financial_data(df):
 
 def make_buckets(df):
     df_new = df.copy()
-    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .001, .424] , labels = [-1,0,1])
+    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.50, -.0406, .0001, .50] , labels = [-1,0,1])
     df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_1d'] = pd.qcut(df_new.tnx_1d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_5d'] = pd.qcut(df_new.tnx_5d, 3 , labels = [-1,0,1])

@@ -259,7 +259,7 @@ def main():
     for label in labels:
         train_data, test_data, train_labels, test_labels = make_train_test_data(df, label) 
         #alpha = param_fitting(train_data, train_labels)
-        alpha = 1
+        alpha = 5
         nb_model = NaiveBayes(train_data,train_labels, alpha)
         nb_model.train_model(train_data, train_labels)
         score = nb_model.evaluate_classifier_accuracy(test_data, test_labels)

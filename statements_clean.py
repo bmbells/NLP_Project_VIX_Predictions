@@ -11,8 +11,8 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-#os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
-os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
+#os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")
@@ -128,7 +128,7 @@ def preprocess_total(df):
 def preprocess_final(tokens, bigrams, infreq_words):
     sentence = " ".join(tokens) #Turn back into a string so I can replace bi_grams into 1 word feature
     for b1, b2 in bigrams:
-        sentence = sentence.replace("%s %s" % (b1 ,b2), "%s%s" % (b1, b2))
+        sentence = sentence.replace("%s %s" % (b1 ,b2), "%s%s " % (b1, b2))
     words = sentence.split()
     words = [w for w in words if not w in infreq_words] #Remove infrequent words
     return words
@@ -138,7 +138,7 @@ def preprocess_final_sentences(sentences, bigrams, infreq_words):
     for lsts in sentences:
         sentence = " ".join(lsts) #Turn back into a string so I can replace bi_grams into 1 word feature
         for b1, b2 in bigrams:
-            sentence = sentence.replace("%s %s" % (b1 ,b2), "%s%s" % (b1, b2))
+            sentence = sentence.replace("%s %s" % (b1 ,b2), "%s%s " % (b1, b2))
         words = sentence.split()
         words = [w for w in words if not w in infreq_words] #Remove infrequent words
         finallst.append(words)

@@ -279,21 +279,20 @@ if __name__ == '__main__':
     print(np.mean(all_scores,axis= 0))
 
 #####################################        
-#lik_log_rats = defaultdict(float)
-#for word in nb_model.vocab:
-#    lik_log_rats[word] = nb_model.likelihood_log_ratio(word)
-#s = sorted(lik_log_rats.items(), key=lambda t: t[1], reverse = True)
-#s[0:5]
-#s[-5::]
+lik_log_rats = defaultdict(float)
+for word in nb_model.vocab:
+    lik_log_rats[word] = nb_model.likelihood_log_ratio(word)
+s = sorted(lik_log_rats.items(), key=lambda t: t[1], reverse = True)
+s[0:5]
+s[-5::]
 
-#print("TOP 15 WORDS FOR CLASS " + POS_LABEL + " :")
-#for tok, count in nb_model.top_n(POS_LABEL, 15):
-#    print('', tok, count)
-#print('')
+print("TOP 15 WORDS FOR CLASS " + POS_LABEL + " :")
+for tok, count in nb_model.top_n(POS_LABEL, 15):
+    print('', tok, count)
+print('')
 #
-#print("TOP 15 WORDS FOR CLASS " + NEG_LABEL + " :")
-#for tok, count in nb_model.top_n(NEG_LABEL, 15):
-#    print('', tok, count)
-#print('')
-#print('[done.]')
+print("TOP 15 WORDS FOR CLASS " + NEG_LABEL + " :")
+for tok, count in nb_model.top_n(NEG_LABEL, 15):
+    print('', tok, count)
+
 

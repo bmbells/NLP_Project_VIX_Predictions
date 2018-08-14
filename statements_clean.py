@@ -11,8 +11,8 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
-#os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+#os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
+os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 def read_and_clean_df():
     df = pd.read_pickle("df_minutes.pickle")

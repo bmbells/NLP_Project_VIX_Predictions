@@ -171,7 +171,8 @@ def make_buckets(df):
     """ Give labels to financial data into 3 equal* buckets"""
 
     df_new = df.copy()
-    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .001, .424] , labels = [-1,0,1]) #Split exactly equally leaves upper bound of unch bucket to still be negative. So slightly changed upper bound
+
+    df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .0001, .424] , labels = [-1,0,1]) #Split exactly equally leaves upper bound of unch bucket to still be negative. So slightly changed upper bound
     df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_1d'] = pd.qcut(df_new.tnx_1d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_5d'] = pd.qcut(df_new.tnx_5d, 3 , labels = [-1,0,1])

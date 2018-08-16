@@ -237,18 +237,19 @@ def param_fitting(train_data,train_labels):
     This function takes the training data/labels and returns best performing alpha parameter.
     Use 5 fold cross validation to hypertune the parameter.
     """
-    x = np.arange(.05,2.05,.05)
+    #x = np.arange(.05,2.05,.05)
+    x = [.0001,.0005, .001, .005, .01, .05, .1, .5, 1, 5, 10,50,100]
     scores = []
     kf = KFold(n_splits = 5)
     for alpha in x:
         kfold_scores = []
         for train, test in kf.split(train_data):
-        #for train, test in loo.split(train_data):
             nb_model = NaiveBayes(train_data[train],train_labels[train], alpha)
             nb_model.train_model(train_data[train], train_labels[train])
             kfold_scores.append(nb_model.evaluate_classifier_accuracy(train_data[test], train_labels[test]))
-        scores.append(np.mean(kfold_scores))    
+        scores.append(np.mean(kfold_scores))      
     return x[np.argmax(scores)]    
+
 
 def main():
     """ Driver function that trains a model for each label """
@@ -257,7 +258,8 @@ def main():
     scores = []
     for label in labels:
         train_data, test_data, train_labels, test_labels = make_train_test_data(df, label) 
-        alpha = param_fitting(train_data, train_labels)
+        #alpha = param_fitting(train_data, train_labels)
+        alpha = 5
         nb_model = NaiveBayes(train_data,train_labels, alpha)
         nb_model.train_model(train_data, train_labels)
         score = nb_model.evaluate_classifier_accuracy(test_data, test_labels)
@@ -270,7 +272,7 @@ if __name__ == '__main__':
     """ Due to the random component and lack of data we want to run it multiple
     times and average the scores.
     """
-    NUM_EPOCHS = 10
+    NUM_EPOCHS = 100
     all_scores = []
     for i in range(NUM_EPOCHS):
         print(i)
@@ -279,20 +281,20 @@ if __name__ == '__main__':
     print(np.mean(all_scores,axis= 0))
 
 #####################################        
-lik_log_rats = defaultdict(float)
-for word in nb_model.vocab:
-    lik_log_rats[word] = nb_model.likelihood_log_ratio(word)
-s = sorted(lik_log_rats.items(), key=lambda t: t[1], reverse = True)
-s[0:5]
-s[-5::]
+#lik_log_rats = defaultdict(float)
+#for word in nb_model.vocab:
+#    lik_log_rats[word] = nb_model.likelihood_log_ratio(word)
+#s = sorted(lik_log_rats.items(), key=lambda t: t[1], reverse = True)
+#s[0:5]
+#s[-5::]
 
-print("TOP 15 WORDS FOR CLASS " + POS_LABEL + " :")
-for tok, count in nb_model.top_n(POS_LABEL, 15):
-    print('', tok, count)
-print('')
+#print("TOP 15 WORDS FOR CLASS " + POS_LABEL + " :")
+#for tok, count in nb_model.top_n(POS_LABEL, 15):
+#    print('', tok, count)
+#print('')
 #
-print("TOP 15 WORDS FOR CLASS " + NEG_LABEL + " :")
-for tok, count in nb_model.top_n(NEG_LABEL, 15):
-    print('', tok, count)
+#print("TOP 15 WORDS FOR CLASS " + NEG_LABEL + " :")
+#for tok, count in nb_model.top_n(NEG_LABEL, 15):
+#    print('', tok, count)
 
 

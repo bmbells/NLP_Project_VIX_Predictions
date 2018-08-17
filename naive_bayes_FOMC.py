@@ -291,7 +291,7 @@ def main(df):
         print(type(nb_model.likelihood_log_ratio('bias', POS_LABEL)))     
         print(log_lik_pos[label]['bias'])
     return scores  
-    
+    ##
 
 if __name__ == '__main__':
     """ Due to the random component and lack of data we want to run it multiple

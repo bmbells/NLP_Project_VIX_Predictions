@@ -200,11 +200,16 @@ class NaiveBayes():
         else:
             return NONE_LABEL
         
-    def likelihood_log_ratio(self, word):
+    def likelihood_log_ratio(self, word, label):
         """
-        Returns the ratio of P(word|pos) to P(word|neg).
+        Returns the ratio of P(word|label ) to P(word|not label).
         """
-        ratio = self.p_word_given_label_and_psuedocount(word, POS_LABEL) / self.p_word_given_label_and_psuedocount(word, NEG_LABEL)
+        if label == POS_LABEL:
+            ratio = self.p_word_given_label_and_psuedocount(word, POS_LABEL) / ( self.p_word_given_label_and_psuedocount(word, NONE_LABEL) + self.p_word_given_label_and_psuedocount(word, NEG_LABEL))
+        if label == NEG_LABEL:
+            ratio = self.p_word_given_label_and_psuedocount(word, NEG_LABEL) / ( self.p_word_given_label_and_psuedocount(word, NONE_LABEL) + self.p_word_given_label_and_psuedocount(word, POS_LABEL))
+        if label == NONE_LABEL:
+            ratio = self.p_word_given_label_and_psuedocount(word, NONE_LABEL) / ( self.p_word_given_label_and_psuedocount(word, POS_LABEL) + self.p_word_given_label_and_psuedocount(word, NEG_LABEL))
         return np.log(ratio)
         
     def evaluate_classifier_accuracy(self, statements, labels):
@@ -250,6 +255,20 @@ def param_fitting(train_data,train_labels):
         scores.append(np.mean(kfold_scores))      
     return x[np.argmax(scores)]    
 
+def print_top_words(ll1, ll2, ll3, num = 5):
+    labels = ['vix_buckets_1d', 'vix_buckets_5d', 'tnx_buckets_1d', 'tnx_buckets_5d']
+    for label in labels:
+        pos = sorted(ll1[label].items(), key=lambda t: t[1], reverse = True)
+        neg = sorted(ll2[label].items(), key=lambda t: t[1], reverse = True)
+        none = sorted(ll3[label].items(), key=lambda t: t[1], reverse = True)
+        print(f'Top {num} positive words for {label} =')
+        print([i[0] for i in pos[0:num]])
+        print(f'Top {num} negative words for {label} =')
+        print([i[0] for i in neg[0:num]])
+        print(f'Top {num} neutral words for {label} = ')
+        print([i[0] for i in none[0:num]])        
+        print()
+
 
 def main():
     """ Driver function that trains a model for each label """
@@ -259,26 +278,44 @@ def main():
     for label in labels:
         train_data, test_data, train_labels, test_labels = make_train_test_data(df, label) 
         #alpha = param_fitting(train_data, train_labels)
-        alpha = 5
+        alpha = 1
         nb_model = NaiveBayes(train_data,train_labels, alpha)
         nb_model.train_model(train_data, train_labels)
         score = nb_model.evaluate_classifier_accuracy(test_data, test_labels)
         print(f"Score for {label} = {score}")
         scores.append(score)
-    return scores    
+        for word in nb_model.vocab:
+            log_lik_pos[label][word] += nb_model.likelihood_log_ratio(word, POS_LABEL)
+            log_lik_neg[label][word] += nb_model.likelihood_log_ratio(word, NEG_LABEL)
+            log_lik_none[label][word] += nb_model.likelihood_log_ratio(word, NONE_LABEL)
+        print(nb_model.likelihood_log_ratio('bias', POS_LABEL))     
+        print(log_lik_pos[label]['bias'])
+    return scores  
     
 
 if __name__ == '__main__':
     """ Due to the random component and lack of data we want to run it multiple
     times and average the scores.
     """
-    NUM_EPOCHS = 100
+    NUM_EPOCHS = 3
     all_scores = []
+    log_lik_pos = {'vix_buckets_1d' : defaultdict(float), 'vix_buckets_5d': defaultdict(float),
+                   'tnx_buckets_1d': defaultdict(float), 'tnx_buckets_5d':defaultdict(float)}
+    log_lik_neg = {'vix_buckets_1d' : defaultdict(float), 'vix_buckets_5d': defaultdict(float),
+                   'tnx_buckets_1d': defaultdict(float), 'tnx_buckets_5d':defaultdict(float)}
+    log_lik_none = {'vix_buckets_1d' : defaultdict(float), 'vix_buckets_5d': defaultdict(float),
+                   'tnx_buckets_1d': defaultdict(float), 'tnx_buckets_5d':defaultdict(float)}
     for i in range(NUM_EPOCHS):
         print(i)
-        all_scores.append(main())
+        scores = main()
+        all_scores.append(scores)
     all_scores = np.array(all_scores)    
+    print()
+    print("Average score for each independent variable = ")
     print(np.mean(all_scores,axis= 0))
+    print()
+    print_top_words(log_lik_pos,log_lik_neg,log_lik_none, 5)
+    
 
 #####################################        
 #lik_log_rats = defaultdict(float)

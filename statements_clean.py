@@ -171,7 +171,6 @@ def make_buckets(df):
     """ Give labels to financial data into 3 equal* buckets"""
 
     df_new = df.copy()
-
     df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .0001, .424] , labels = [-1,0,1]) #Split exactly equally leaves upper bound of unch bucket to still be negative. So slightly changed upper bound
     df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])
     df_new['tnx_buckets_1d'] = pd.qcut(df_new.tnx_1d, 3 , labels = [-1,0,1])
@@ -185,6 +184,7 @@ def main():
     bigrams, infreq_words = find_bigrams_remove_infrequent_words(df)
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
     df['sentences'] = df.sentences.apply(preprocess_final_sentences, args = (bigrams, infreq_words))
+    x = Counter([word for data in df['statements'] for word in data])
     df2 = combine_with_financial_data(df)
     df3 = make_buckets(df2)
     df3.to_pickle("./all_data.pickle")

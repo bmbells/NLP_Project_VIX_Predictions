@@ -85,7 +85,7 @@ def main():
         train_data, test_data, train_labels, test_labels = make_train_test_data(df, model, label)
         X = train_data
         y = train_labels
-        nnet = MLPClassifier(activation = 'logistic',hidden_layer_sizes=(50,2), solver = 'lbfgs', alpha = .1)
+        nnet = MLPClassifier(activation = 'logistic',hidden_layer_sizes=(50,1), solver = 'lbfgs', alpha = .1)
         nnet.fit(X,y)
         preds = nnet.predict(test_data)
         score = (preds == test_labels).sum()/len(preds)

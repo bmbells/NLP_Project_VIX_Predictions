@@ -214,7 +214,7 @@ if __name__ == '__main__':
     """ Due to the random component and lack of data we want to run it multiple
     times and average the scores.
     """
-    NUM_EPOCHS = 1000
+    NUM_EPOCHS = 100
     all_scores = []
     df = load_data()
     #create dictionaries to store the log likelihoods for each word

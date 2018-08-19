@@ -12,8 +12,8 @@ from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
 import random
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
-os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
-#os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
+#os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
+os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 def read_and_clean_df():
     """ Takes FOMC statements and removes all non-statement information"""
@@ -50,6 +50,7 @@ def read_and_clean_df():
 def augment_dataset(df):
     """Augment the dataset to provide more data for testing."""
 
+
     copys = 6
     for i in range(copys):
         df = pd.concat([df,df]) #Duplicate df, 2^6 times
@@ -62,6 +63,7 @@ def augment_dataset(df):
         statement = " ".join(temp)
         df.statements[i] = statement
     return df
+
 
 def tokenize_and_preprocess_bystatement(stng):
     """First step of preprocessing statements for Bag of Words
@@ -197,6 +199,7 @@ def make_buckets(df):
 
 def main():
     df = read_and_clean_df()
+
     df = combine_with_financial_data(df)
     df = augment_dataset(df)
     df['sentences'] = df.statements.apply(tokenize_and_preprocess_bystatement_sentences)
@@ -206,6 +209,7 @@ def main():
     df['sentences'] = df.sentences.apply(preprocess_final_sentences, args = (bigrams, infreq_words))
     df2 = make_buckets(df)
     df2.to_pickle("./all_data.pickle")
+
 
 if __name__ == '__main__':
     main()

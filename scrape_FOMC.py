@@ -1,23 +1,13 @@
-gifrom __future__ import print_function
+from __future__ import print_function
 from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import re
 import pandas as pd
-import pickle
 import threading
 import sys
-import os
-#os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 class FOMC (object):
-    '''
-    A convenient class for extracting meeting minutes from the FOMC website
-    Example Usage:  
-        fomc = FOMC()
-        df = fomc.get_statements()
-        fomc.pickle("./df_minutes.pickle")
-    '''
-
+    """Class for pulling FOMC statements"""
     def __init__(self, base_url='https://www.federalreserve.gov', 
                  calendar_url='https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
                  historical_date = 2011,
@@ -36,10 +26,9 @@ class FOMC (object):
     
 
     def _get_links(self, from_year):
-        '''
-        private function that sets all the links for the FOMC meetings from the giving from_year
-        to the current most recent year
-        '''
+        """
+        Function that sets all the links for the FOMC meetings from the from_year to now
+        """
         if self.verbose:
             print("Getting links...")
         self.links = []
@@ -60,6 +49,7 @@ class FOMC (object):
 
 
     def _date_from_link(self, link):
+        """Extract the date from the link"""
         date = re.findall('[0-9]{8}', link)[0]
         if date[4] == '0':
             date = "{}/{}/{}".format(date[:4], date[5:6], date[6:])
@@ -69,17 +59,10 @@ class FOMC (object):
 
 
     def _add_article(self, link, index=None):
-        '''
-        adds the related article for 1 link into the instance variable
-        index is the index in the article to add to. Due to concurrent
-        prcessing, we need to make sure the articles are stored in the
-        right order
-        '''
+        """Store the article from the link"""
         if self.verbose:
             sys.stdout.write(".")
             sys.stdout.flush()
-
-        # date of the article content
         self.dates.append(self._date_from_link(link))
         statement_socket = urlopen(self.base_url + link)
         statement = BeautifulSoup(statement_socket, 'html.parser')
@@ -88,15 +71,12 @@ class FOMC (object):
 
 
     def _get_articles_multi_threaded(self):
-        '''
-        gets all articles using multi-threading
-        '''
+        """Gets all articles using multi-threading"""
         if self.verbose:
             print("Getting articles - Multi-threaded...")
 
         self.dates, self.articles = [], ['']*len(self.links)
         jobs = []
-        # initiate and start threads:
         index = 0
         while index < len(self.links):
             if len(jobs) < self.MAX_THREADS:
@@ -115,30 +95,17 @@ class FOMC (object):
 
 
     def get_statements(self, from_year=1994):
-        '''
-        Returns a Pandas DataFrame of meeting minutes with the date as the index
-        uses a date range of from_year to the most current
-        Input from_year is ignored if it is within the last 5 years as this is meant for 
-        parsing much older years
-        '''
+        """
+        This function pulls all statements and aggregates them into a pandas dataframe
+        """
         self._get_links(from_year)
         print("There are", len(self.links), 'statements')
         self._get_articles_multi_threaded()
-
         self.df = pd.DataFrame(self.articles, index = pd.to_datetime(self.dates)).sort_index()
         self.df.columns = ['statements']
         return self.df
 
-
-    def pick_df(self, filename="../data/minutes.pickle"):
-        if filename:
-            if self.verbose:
-                print("Writing to", filename)        
-            with open(filename, "wb") as output_file:
-                    pickle.dump(self.df, output_file)
-
 if __name__ == '__main__':
-    #Example Usage
     fomc = FOMC()
     df = fomc.get_statements()
-    df.to_pickle("./df_minutes.pickle")
+    df.to_pickle("./df_minutes.pickle") #store the data as a pickle for later use

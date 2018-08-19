@@ -51,13 +51,14 @@ def augment_dataset(df):
     copys = 6
     for i in range(copys):
         df = pd.concat([df,df])
+    num_words_to_delete = 15    
     for i in range(150,len(df)):
         temp = df.statements[i].split()
-        for j in range(5):
-            element = random.randint(0,len(temp) - 5)
+        for j in range(num_words_to_delete):
+            element = random.randint(0,len(temp) - num_words_to_delete)
             del temp[element]
-            statement = " ".join(temp)
-            df.statements[i] = statement
+        statement = " ".join(temp)
+        df.statements[i] = statement
     return df        
 
 def tokenize_and_preprocess_bystatement(stng):

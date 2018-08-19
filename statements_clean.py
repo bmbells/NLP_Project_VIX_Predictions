@@ -17,6 +17,7 @@ os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project
 
 def read_and_clean_df():
     """ Takes FOMC statements and removes all non-statement information"""
+
     df = pd.read_pickle("df_minutes.pickle")
     for i in range(len(df)):
         temp = df.iloc[i,0].split('\n\nShare\n\n')
@@ -48,18 +49,21 @@ def read_and_clean_df():
 
 def augment_dataset(df):
     """Augment the dataset to provide more data for testing."""
+
+
     copys = 6
     for i in range(copys):
-        df = pd.concat([df,df])
-    num_words_to_delete = 15    
+        df = pd.concat([df,df]) #Duplicate df, 2^6 times
+    num_words_to_delete = 15
     for i in range(150,len(df)):
         temp = df.statements[i].split()
-        for j in range(num_words_to_delete):
+        for j in range(num_words_to_delete): #Add noise by deleting random words from each dataset
             element = random.randint(0,len(temp) - num_words_to_delete)
             del temp[element]
         statement = " ".join(temp)
         df.statements[i] = statement
-    return df        
+    return df
+
 
 def tokenize_and_preprocess_bystatement(stng):
     """First step of preprocessing statements for Bag of Words
@@ -180,7 +184,7 @@ def combine_with_financial_data(df):
 
     df2 = pd.read_csv("financial_data.csv", index_col = 0)
     df3 = df.join(df2, how = 'left')
-    df4 = df3[['statements','sentences', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
+    df4 = df3[['statements', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
     return df4
 
 def make_buckets(df):
@@ -195,15 +199,17 @@ def make_buckets(df):
 
 def main():
     df = read_and_clean_df()
+
+    df = combine_with_financial_data(df)
     df = augment_dataset(df)
     df['sentences'] = df.statements.apply(tokenize_and_preprocess_bystatement_sentences)
     df['statements'] = df.statements.apply(tokenize_and_preprocess_bystatement)
     bigrams, infreq_words = find_bigrams_remove_infrequent_words(df)
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
     df['sentences'] = df.sentences.apply(preprocess_final_sentences, args = (bigrams, infreq_words))
-    df2 = combine_with_financial_data(df)
-    df3 = make_buckets(df2)
-    df3.to_pickle("./all_data.pickle")
+    df2 = make_buckets(df)
+    df2.to_pickle("./all_data.pickle")
+
 
 if __name__ == '__main__':
     main()

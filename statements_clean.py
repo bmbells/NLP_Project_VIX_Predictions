@@ -10,6 +10,7 @@ from nltk.tag import pos_tag
 from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
+import random
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 #os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
@@ -44,6 +45,20 @@ def read_and_clean_df():
     bad_dates = ['2007-08-10','2007-08-17','2008-01-22','2008-03-11','2008-10-08','2010-05-09'] #Filter out bad data
     df = df.loc[~df.index.isin(bad_dates)]
     return df
+
+def augment_dataset(df):
+    """Augment the dataset to provide more data for testing."""
+    copys = 6
+    for i in range(copys):
+        df = pd.concat([df,df])
+    for i in range(150,len(df)):
+        temp = df.statements[i].split()
+        for j in range(5):
+            element = random.randint(0,len(temp) - 5)
+            del temp[element]
+            statement = " ".join(temp)
+            df.statements[i] = statement
+    return df        
 
 def tokenize_and_preprocess_bystatement(stng):
     """First step of preprocessing statements for Bag of Words
@@ -179,12 +194,12 @@ def make_buckets(df):
 
 def main():
     df = read_and_clean_df()
+    df = augment_dataset(df)
     df['sentences'] = df.statements.apply(tokenize_and_preprocess_bystatement_sentences)
     df['statements'] = df.statements.apply(tokenize_and_preprocess_bystatement)
     bigrams, infreq_words = find_bigrams_remove_infrequent_words(df)
     df['statements'] = df.statements.apply(preprocess_final, args = (bigrams, infreq_words))
     df['sentences'] = df.sentences.apply(preprocess_final_sentences, args = (bigrams, infreq_words))
-    x = Counter([word for data in df['statements'] for word in data])
     df2 = combine_with_financial_data(df)
     df3 = make_buckets(df2)
     df3.to_pickle("./all_data.pickle")

@@ -230,7 +230,7 @@ if __name__ == '__main__':
         all_scores.append(scores)
     all_scores = np.array(all_scores)    
     print()
-    print("Average score for each independent variable = ")
+    print("Average score for each test = ")
     print(np.mean(all_scores,axis= 0))
     print()
     print_top_words(lik_log_rats_pos,lik_log_rats_neg,lik_log_rats_none)

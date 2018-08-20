@@ -48,14 +48,14 @@ def read_and_clean_df():
 
 def augment_dataset(df):
     """Augment the dataset to provide more data for testing."""
-    copys = 6
+    copys = 5
     for i in range(copys):
         df = pd.concat([df,df])
-    num_words_to_delete = 15    
     for i in range(150,len(df)):
+        num_words_to_delete = random.randint(0,40) #pick a random number of words to delete    
         temp = df.statements[i].split()
         for j in range(num_words_to_delete):
-            element = random.randint(0,len(temp) - num_words_to_delete)
+            element = random.randint(0,len(temp)-1)
             del temp[element]
         statement = " ".join(temp)
         df.statements[i] = statement

@@ -11,6 +11,7 @@ from nltk.corpus import stopwords
 from nltk.stem.porter import PorterStemmer
 from nltk.collocations import *
 import random
+from sklearn.model_selection import train_test_split
 tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 #os.chdir("C:\\Users\\jooho\\NLPProject\\NLP_Project_VIX_Predictions")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
@@ -46,20 +47,31 @@ def read_and_clean_df():
     df = df.loc[~df.index.isin(bad_dates)]
     return df
 
+def make_train_test_data(df, test_size = 0.4):
+    """Divide data into train and test data for model training and validating."""
+    df['set'] = "train"
+    test_data = df.sample(frac = test_size, random_state = 1)
+    test_data['set'] = "test"
+    train_data = df[~df.index.isin(test_data.index)]
+    return train_data, test_data
+
 def augment_dataset(df):
     """Augment the dataset to provide more data for testing."""
-    copys = 5
+    copys = 6
+    train_data, test_data = make_train_test_data(df)
+    len_train = len(train_data)
     for i in range(copys):
-        df = pd.concat([df,df])
-    for i in range(150,len(df)):
+        train_data = pd.concat([train_data,train_data])
+    for i in range(len_train,len(train_data)):
         num_words_to_delete = random.randint(0,40) #pick a random number of words to delete    
-        temp = df.statements[i].split()
+        temp = train_data.statements[i].split()
         for j in range(num_words_to_delete):
             element = random.randint(0,len(temp)-1)
             del temp[element]
         statement = " ".join(temp)
-        df.statements[i] = statement
-    return df        
+        train_data.statements[i] = statement
+    df2 = pd.concat([train_data, test_data])    
+    return df2    
 
 def tokenize_and_preprocess_bystatement(stng):
     """First step of preprocessing statements for Bag of Words
@@ -180,12 +192,11 @@ def combine_with_financial_data(df):
 
     df2 = pd.read_csv("financial_data.csv", index_col = 0)
     df3 = df.join(df2, how = 'left')
-    df4 = df3[['statements','sentences', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d']]
+    df4 = df3[['statements','sentences', 'vix_1d', 'tnx_1d', 'vix_5d', 'tnx_5d', 'set']]
     return df4
 
 def make_buckets(df):
     """ Give labels to financial data into 3 equal* buckets"""
-
     df_new = df.copy()
     df_new['vix_buckets_1d'] = pd.cut(df_new.vix_1d, [-.212, -.0406, .0001, .424] , labels = [-1,0,1]) #Split exactly equally leaves upper bound of unch bucket to still be negative. So slightly changed upper bound
     df_new['vix_buckets_5d'] = pd.qcut(df_new.vix_5d, 3 , labels = [-1,0,1])

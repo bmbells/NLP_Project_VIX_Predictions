@@ -4,6 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from gensim.models import Word2Vec
+from sklearn.model_selection import KFold
 #os.chdir("C:\\Users\\jooho\\NLPProject")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
@@ -29,51 +30,54 @@ def word_to_vec(df):
 def turn_statements_to_vectors(df, model):
     """Convert the statements to vectors"""
     all_statements = []
-    for i in range(len(df.statements)):
+    for i in range(len(df.sentences)):
         all_vectors = []
-        for j in range(len(df.statements[i])):
-            vec = model.wv[df.statements[i][j]]
-            all_vectors.append(vec)
+        for j in range(len(df.sentences[i])):
+            for k in range(len(df.sentences[i][j])):
+                vec = model.wv[df.sentences[i][j][k]]
+                all_vectors.append(vec)
         all_statements.append(np.sum(all_vectors, axis = 0))   
     return np.array(all_statements)    
             
 
-def make_train_test_data(df, model, label, test_size = 0.2):
+def make_train_test_data(df, model, label):
     """Divide data into train and test data for model training and validating."""
-    X = turn_statements_to_vectors(df, model)
-    y = df[label]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)#, random_state=42)
+    train_data = df[df.set == "train"]
+    test_data = df[df.set == "test"]
+    X_train = turn_statements_to_vectors(train_data, model)
+    X_test = turn_statements_to_vectors(test_data, model)
+    y_train = train_data[label]
+    y_test = test_data[label]
     return X_train, X_test, y_train, y_test
 
-def param_tuning():
-    """Function used when parameter tuning before running the model. I ran some 
-    manual experiments using this code."""
-    df = load_data()
-    labels = ['vix_buckets_1d', 'vix_buckets_5d', 'tnx_buckets_1d', 'tnx_buckets_5d']
-    model = word_to_vec(df)
-    scores = []
-    activations = ['relu', 'logistic', 'identity']
+def param_tuning(train_data, train_labels, label):
+    """Function used when parameter tuning before running the model"""
+    score = np.inf * -1
+    activations = ['logistic', 'identity']
     hidden_layer_sizes = [10,50,100]
     nlayers = [1,2]
-    alphas = [.0001, .001, .01, .1, .5]
-    epochs = 50
-    for label in labels:
-            train_data, test_data, train_labels, test_labels = make_train_test_data(df, model, label)
-            X = train_data
-            y = train_labels
-            #check out parameters
-            for nl in nlayers:
+    X = train_data
+    y = train_labels
+    act_good = None
+    nl_good = None
+    hls_good = None
+    kf = KFold(n_splits = 5)
+    for act in activations:
+        for nl in nlayers:
                 for hls in hidden_layer_sizes:
-                    scores = []
-                    for i in range(epochs):
-                        alpha = .1
-                        act = 'logistic'
-                        nnet = MLPClassifier(activation = act ,hidden_layer_sizes=(hls,nl), solver = 'lbfgs', alpha = alpha)
-                        nnet.fit(X,y)
-                        preds = nnet.predict(test_data)
-                        score = (preds == test_labels).sum()/len(preds)
-                        scores.append(score)
-                    print(f"Score for {label} {act} {hls} {nl} {alpha} = {np.mean(scores)}")
+                    kfold_scores = []
+                    for train, test in kf.split(train_data):
+                        nnet = MLPClassifier(activation = act ,hidden_layer_sizes=(hls,nl), solver = 'lbfgs', alpha = .1)
+                        nnet.fit(X[train],y[train])
+                        preds = nnet.predict(X[test])
+                        score = (preds == y[test]).sum()/len(preds)
+                        kfold_scores.append(score)
+                    print(f"Score for {label} {act} {hls} {nl} = {np.mean(kfold_scores)}")
+                    if np.mean(kfold_scores) > score:
+                        act_good = act
+                        nl_good = nl
+                        hls_good = hls
+    return act_good, nl_good, hls_good                   
                 
 def main():
     """Create NN for each test and output the accuracy score on the out of sample data"""
@@ -85,20 +89,15 @@ def main():
         train_data, test_data, train_labels, test_labels = make_train_test_data(df, model, label)
         X = train_data
         y = train_labels
-        nnet = MLPClassifier(activation = 'logistic',hidden_layer_sizes=(50,1), solver = 'lbfgs', alpha = .1)
+        act, nl, hls = param_tuning(train_data, train_labels, label)
+        nnet = MLPClassifier(activation = act,hidden_layer_sizes=(hls,nl), solver = 'lbfgs', alpha = .1)
         nnet.fit(X,y)
         preds = nnet.predict(test_data)
         score = (preds == test_labels).sum()/len(preds)
         print(f"Score for {label} = {score}")
+        print()
         scores.append(score)
     return scores
     
 if __name__ == '__main__':       
-    """Run the main function multiple times and print the average scores"""
-    NUM_EPOCHS = 50
-    all_scores = []
-    for i in range(NUM_EPOCHS):
-        print(i)
-        all_scores.append(main())
-    all_scores = np.array(all_scores)    
-    print(np.mean(all_scores,axis= 0))
+    scores = main()

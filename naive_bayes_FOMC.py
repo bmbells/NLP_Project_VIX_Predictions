@@ -130,11 +130,14 @@ class NaiveBayes():
         return sum(accuracy)/float(len(accuracy))
 
 
-def make_train_test_data(df, label, test_size = 0.2):
+def make_train_test_data(df, label):#, test_size = 0.2):
     """Divide data into train and test data for model training and validating."""
-    X = df.statements
-    y = df[label]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)#, random_state=42)
+    df_train = df[df.set == "train"]
+    df_test = df[df.set == "test"]
+    X_train = df_train.statements
+    X_test = df_test.statements
+    y_train = df_train[label]
+    y_test = df_test[label]
     return X_train, X_test, y_train, y_test
 
 

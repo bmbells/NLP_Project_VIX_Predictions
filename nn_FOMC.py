@@ -1,11 +1,9 @@
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
 from gensim.models import Word2Vec
 from sklearn.model_selection import KFold
-#os.chdir("C:\\Users\\jooho\\NLPProject")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 POS_LABEL = 1
@@ -13,12 +11,14 @@ NEG_LABEL = -1
 NONE_LABEL = 0 
 
 def load_data():
-    """Load all necessary data"""
+    """Returns pre-processed dataframe of statements and labels"""
+    
     df = pd.read_pickle("all_data.pickle")
     return df
 
 def word_to_vec(df):
     """Create the word2vec model to convert words to vectors"""
+    
     all_sentences = []
     for i in range(len(df)):
         for j in range(len(df.sentences[i])):
@@ -28,7 +28,12 @@ def word_to_vec(df):
     return model
 
 def turn_statements_to_vectors(df, model):
-    """Convert the statements to vectors"""
+    """
+    Convert the statements to vectors by summing up all word embedding vectors
+    for each statement. 
+    
+    Returns a list of all statements in vector form.
+    """
     all_statements = []
     for i in range(len(df.sentences)):
         all_vectors = []
@@ -42,6 +47,7 @@ def turn_statements_to_vectors(df, model):
 
 def make_train_test_data(df, model, label):
     """Divide data into train and test data for model training and validating."""
+    
     train_data = df[df.set == "train"]
     test_data = df[df.set == "test"]
     X_train = turn_statements_to_vectors(train_data, model)
@@ -51,7 +57,12 @@ def make_train_test_data(df, model, label):
     return X_train, X_test, y_train, y_test
 
 def param_tuning(train_data, train_labels, label):
-    """Function used when parameter tuning before running the model"""
+    """
+    Function used when parameter tuning before running the model. Performs
+    cross-validation to pick the best performing activation, layer size, and
+    number of layers for the training data and given test.
+    
+    """
     score = np.inf * -1
     activations = ['logistic', 'identity']
     hidden_layer_sizes = [10,50,100]
@@ -67,7 +78,7 @@ def param_tuning(train_data, train_labels, label):
                 for hls in hidden_layer_sizes:
                     kfold_scores = []
                     for train, test in kf.split(train_data):
-                        nnet = MLPClassifier(activation = act ,hidden_layer_sizes=(hls,nl)), solver = 'lbfgs', alpha = .1)
+                        nnet = MLPClassifier(activation = act ,hidden_layer_sizes=(hls,nl), solver = 'lbfgs', alpha = .1)
                         nnet.fit(X[train],y[train])
                         preds = nnet.predict(X[test])
                         score = (preds == y[test]).sum()/len(preds)
@@ -81,7 +92,10 @@ def param_tuning(train_data, train_labels, label):
     return act_good, nl_good, hls_good                   
                 
 def main():
-    """Create NN for each test and output the accuracy score on the out of sample data"""
+    """
+    Create NN for each test and output the accuracy score on the out of sample data.
+    """
+    
     df = load_data()
     labels = ['vix_buckets_1d', 'vix_buckets_5d', 'tnx_buckets_1d', 'tnx_buckets_5d']
     model = word_to_vec(df)

@@ -8,6 +8,7 @@ import sys
 
 class FOMC (object):
     """Class for pulling FOMC statements"""
+    
     def __init__(self, base_url='https://www.federalreserve.gov', 
                  calendar_url='https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm',
                  historical_date = 2011,
@@ -29,6 +30,7 @@ class FOMC (object):
         """
         Function that sets all the links for the FOMC meetings from the from_year to now
         """
+        
         if self.verbose:
             print("Getting links...")
         self.links = []
@@ -50,6 +52,7 @@ class FOMC (object):
 
     def _date_from_link(self, link):
         """Extract the date from the link"""
+        
         date = re.findall('[0-9]{8}', link)[0]
         if date[4] == '0':
             date = "{}/{}/{}".format(date[:4], date[5:6], date[6:])
@@ -60,6 +63,7 @@ class FOMC (object):
 
     def _add_article(self, link, index=None):
         """Store the article from the link"""
+        
         if self.verbose:
             sys.stdout.write(".")
             sys.stdout.flush()
@@ -72,6 +76,7 @@ class FOMC (object):
 
     def _get_articles_multi_threaded(self):
         """Gets all articles using multi-threading"""
+        
         if self.verbose:
             print("Getting articles - Multi-threaded...")
 
@@ -98,6 +103,7 @@ class FOMC (object):
         """
         This function pulls all statements and aggregates them into a pandas dataframe
         """
+        
         self._get_links(from_year)
         print("There are", len(self.links), 'statements')
         self._get_articles_multi_threaded()

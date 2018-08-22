@@ -2,9 +2,7 @@ from collections import Counter, defaultdict
 import os
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
-#os.chdir("C:\\Users\\jooho\\NLPProject")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
 POS_LABEL = 1
@@ -12,13 +10,15 @@ NEG_LABEL = -1
 NONE_LABEL = 0   
 
 def load_data():
-    """Load all necessary data"""
+    """Returns pre-processed dataframe of statements and labels"""
+    
     df = pd.read_pickle("all_data.pickle")
     return df
 
 
 def tokenize_doc(statement):
     """ Tokenize a document and return its bag-of-words representation as a dictionary """
+    
     c = defaultdict(float)
     for word in statement:
         c[word] += 1
@@ -27,6 +27,7 @@ def tokenize_doc(statement):
 
 class NaiveBayes():
     """A Naive Bayes model for text classification"""
+    
     def __init__(self, statements, labels, alpha):
         self.vocab = Counter([word for content in statements for word in content])
         self.word_to_idx = {k: v+1 for v, k in enumerate(self.vocab)} # word to index mapping
@@ -64,24 +65,23 @@ class NaiveBayes():
     
     def tokenize_and_update_model(self, doc, label):
         """Tokenizes a document doc and updates internal count statistics."""
-        
         bow = tokenize_doc(doc)
         self.update_model(bow, label)
     
     def p_word_given_label(self, word, label):
-        """Returns the probability of word given label (i.e., P(word|label))"""
+        """Returns the probability of word given label"""
         count_in_label= self.class_word_counts[label][word]
         all_in_label = self.class_total_word_counts[label]
         return (count_in_label/all_in_label)
     
     def p_word_given_label_and_psuedocount(self, word, label):
-        """Returns the probability of word given label wrt psuedo counts."""
+        """Returns the probability of word given label with smoothing."""
         count_in_label= self.class_word_counts[label][word]
         all_in_label = self.class_total_word_counts[label]
         return (count_in_label + self.alpha)/(all_in_label + (len(self.vocab)*self.alpha))
     
     def log_likelihood(self, bow, label):
-        """Computes the log likelihood of a set of words give a label and psuedocount. """
+        """Computes the log likelihood of a set of words give a label and psuedocount."""
         log_probs = [np.log(self.p_word_given_label_and_psuedocount(word, label)) for word in bow.keys()]
         return sum(log_probs)
     

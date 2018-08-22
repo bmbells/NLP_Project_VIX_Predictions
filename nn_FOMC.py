@@ -67,7 +67,7 @@ def param_tuning(train_data, train_labels, label):
                 for hls in hidden_layer_sizes:
                     kfold_scores = []
                     for train, test in kf.split(train_data):
-                        nnet = MLPClassifier(activation = act ,hidden_layer_sizes=(hls,nl), solver = 'lbfgs', alpha = .1)
+                        nnet = MLPClassifier(activation = act ,hidden_layer_sizes=(hls,nl)), solver = 'lbfgs', alpha = .1)
                         nnet.fit(X[train],y[train])
                         preds = nnet.predict(X[test])
                         score = (preds == y[test]).sum()/len(preds)
@@ -77,6 +77,7 @@ def param_tuning(train_data, train_labels, label):
                         act_good = act
                         nl_good = nl
                         hls_good = hls
+                print()
     return act_good, nl_good, hls_good                   
                 
 def main():

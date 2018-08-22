@@ -50,9 +50,9 @@ def read_and_clean_df():
 
 def make_train_test_data(df, test_size = 0.4):
     """Divide data into train and test data for model training and validating."""
-
     df['set'] = "train"
-    test_data = df.sample(frac = test_size)
+    test_data = df.sample(frac = test_size, random_state = 1)
+
     test_data['set'] = "test"
     train_data = df[~df.index.isin(test_data.index)]
     return train_data, test_data
@@ -67,14 +67,18 @@ def augment_dataset(df):
         train_data = pd.concat([train_data,train_data])
     for i in range(len_train,len(train_data)):
         num_words_to_delete = random.randint(0,40) #pick a random number of words to delete
+
         temp = train_data.statements[i].split()
         for j in range(num_words_to_delete):
             element = random.randint(0,len(temp)-1)
             del temp[element]
         statement = " ".join(temp)
         train_data.statements[i] = statement
+
     df2 = pd.concat([train_data, test_data])
     return df2
+ 
+
 
 def tokenize_and_preprocess_bystatement(stng):
     """First step of preprocessing statements for Bag of Words

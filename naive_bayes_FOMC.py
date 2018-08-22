@@ -1,17 +1,9 @@
-import torch.utils.data as tud
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
 from collections import Counter, defaultdict
-import operator
-import os, math
+import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import KFold
-from sklearn.model_selection import LeaveOneOut
 #os.chdir("C:\\Users\\jooho\\NLPProject")
 os.chdir("C:\\Users\\dabel\\Documents\\Natural_Language_Processing_MPCS\\project")
 
@@ -138,13 +130,15 @@ class NaiveBayes():
         return sum(accuracy)/float(len(accuracy))
 
 
-def make_train_test_data(df, label, test_size = 0.2):
+def make_train_test_data(df, label):#, test_size = 0.2):
     """Divide data into train and test data for model training and validating."""
-    X = df.statements
-    y = df[label]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)#, random_state=42)
+    df_train = df[df.set == "train"]
+    df_test = df[df.set == "test"]
+    X_train = df_train.statements
+    X_test = df_test.statements
+    y_train = df_train[label]
+    y_test = df_test[label]
     return X_train, X_test, y_train, y_test
-
 
 
 def param_fitting(train_data,train_labels):
@@ -152,8 +146,7 @@ def param_fitting(train_data,train_labels):
     This function takes the training data/labels and returns best performing alpha parameter.
     Use 5 fold cross validation to hypertune the parameter.
     """
-    #x = np.arange(.05,2.05,.05)
-    x = [.0001,.0005, .001, .005, .01, .05, .1, .5, 1, 5, 10,50,100]
+    x = [.0001,.001,.01,.1,1]
     scores = []
     kf = KFold(n_splits = 5)
     for alpha in x:
@@ -162,7 +155,7 @@ def param_fitting(train_data,train_labels):
             nb_model = NaiveBayes(train_data[train],train_labels[train], alpha)
             nb_model.train_model(train_data[train], train_labels[train])
             kfold_scores.append(nb_model.evaluate_classifier_accuracy(train_data[test], train_labels[test]))
-        scores.append(np.mean(kfold_scores))      
+        scores.append(np.mean(kfold_scores))    
     return x[np.argmax(scores)]    
 
 
@@ -182,8 +175,7 @@ def print_top_words(ll1, ll2, ll3, num = 5):
         print()
 
 
-
-def main(df, lik_log_rats_pos, lik_log_rats_neg, lik_log_rats_none):
+def main():
     """ Driver function that trains a model for each test. Takes in the dictionaries
     that stores the log likelihood ratios for each word in order to later see which
     are the most impactful words.
@@ -191,46 +183,31 @@ def main(df, lik_log_rats_pos, lik_log_rats_neg, lik_log_rats_none):
     labels = ['vix_buckets_1d', 'vix_buckets_5d', 'tnx_buckets_1d', 'tnx_buckets_5d']
     scores = []
     #store log likelihoods for each label
-    for label in labels:
-        train_data, test_data, train_labels, test_labels = make_train_test_data(df, label) 
-        #alpha = param_fitting(train_data, train_labels)
-        alpha = 1
-        nb_model = NaiveBayes(train_data,train_labels, alpha)
-        nb_model.train_model(train_data, train_labels)
-        score = nb_model.evaluate_classifier_accuracy(test_data, test_labels)
-        print(f"Score for {label} = {score}")
-        scores.append(score)
-        #update the log likelihood dictionaries
-        for word in nb_model.vocab:
-            lik_log_rats_pos[label][word] += nb_model.likelihood_log_ratio(word,POS_LABEL)
-            lik_log_rats_neg[label][word] += nb_model.likelihood_log_ratio(word,NEG_LABEL)
-            lik_log_rats_none[label][word] += nb_model.likelihood_log_ratio(word,NONE_LABEL)
-        #print(nb_model.likelihood_log_ratio('bias',POS_LABEL))
-        #print(lik_log_rats_pos[label]['bias'])    
-    return scores   
-
-
-if __name__ == '__main__':
-    """ Due to the random component and lack of data we want to run it multiple
-    times and average the scores.
-    """
-    NUM_EPOCHS = 100
-    all_scores = []
     df = load_data()
-    #create dictionaries to store the log likelihoods for each word
+    #create log likelihood_dictionaries
     lik_log_rats_pos = {'vix_buckets_1d' : defaultdict(float), 'vix_buckets_5d': defaultdict(float),
                     'tnx_buckets_1d' : defaultdict(float), 'tnx_buckets_5d': defaultdict(float)}
     lik_log_rats_neg = {'vix_buckets_1d' : defaultdict(float), 'vix_buckets_5d': defaultdict(float),
                     'tnx_buckets_1d' : defaultdict(float), 'tnx_buckets_5d': defaultdict(float)}
     lik_log_rats_none = {'vix_buckets_1d' : defaultdict(float), 'vix_buckets_5d': defaultdict(float),
                     'tnx_buckets_1d' : defaultdict(float), 'tnx_buckets_5d': defaultdict(float)}
-    for i in range(NUM_EPOCHS):
-        print(i)
-        scores = main(df, lik_log_rats_pos, lik_log_rats_neg, lik_log_rats_none)
-        all_scores.append(scores)
-    all_scores = np.array(all_scores)    
-    print()
-    print("Average score for each test = ")
-    print(np.mean(all_scores,axis= 0))
-    print()
-    print_top_words(lik_log_rats_pos,lik_log_rats_neg,lik_log_rats_none)
+    for label in labels:
+        train_data, test_data, train_labels, test_labels = make_train_test_data(df, label) 
+        alpha = param_fitting(train_data, train_labels)
+        print(f"Alpha for {label} = {alpha}")
+        nb_model = NaiveBayes(train_data,train_labels, alpha)
+        nb_model.train_model(train_data, train_labels)
+        score = nb_model.evaluate_classifier_accuracy(test_data, test_labels)
+        print(f"Score for {label} = {score}")
+        scores.append(score)
+        for word in nb_model.vocab:
+            lik_log_rats_pos[label][word] += nb_model.likelihood_log_ratio(word,POS_LABEL)
+            lik_log_rats_neg[label][word] += nb_model.likelihood_log_ratio(word,NEG_LABEL)
+            lik_log_rats_none[label][word] += nb_model.likelihood_log_ratio(word,NONE_LABEL)
+    print()        
+    print_top_words(lik_log_rats_pos,lik_log_rats_neg,lik_log_rats_none)     
+    return scores   
+
+
+if __name__ == '__main__':
+    scores = main()

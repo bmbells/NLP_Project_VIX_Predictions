@@ -1,7 +1,6 @@
-## Predicting VIX moves after a Federal Open Market Committee Minutes Release
-
-# Bryan Beller and Jooho Yu
-# August 2018
+# Predicting VIX moves after a Federal Open Market Committee Minutes Release
+## Bryan Beller and Jooho Yu
+#### August 2018
 
 scrape_FOMC.py: Scrapes the web for all FOMC statements and stores them as a pandas dataframe. The resulting data is then stored in "df_minutes.pickle".
 
